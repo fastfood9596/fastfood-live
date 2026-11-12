@@ -1,0 +1,3 @@
+DROP POLICY IF EXISTS "Anyone can upload menu photos" ON storage.objects;
+UPDATE public.categories SET image_url = replace(image_url, 'https://aktozixmpqlvvucoaxqn.supabase.co/storage/v1/object/public/menu-photos/starter/', '/menu/') WHERE image_url LIKE 'https://aktozixmpqlvvucoaxqn.supabase.co/storage/v1/object/public/menu-photos/starter/%';
+UPDATE public.menu_items SET image_url = replace(image_url, 'https://aktozixmpqlvvucoaxqn.supabase.co/storage/v1/object/public/menu-photos/starter/', '/menu/') WHERE image_url LIKE 'https://aktozixmpqlvvucoaxqn.supabase.co/storage/v1/object/public/menu-photos/starter/%';

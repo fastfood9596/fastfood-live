@@ -1,0 +1,70 @@
+import {
+  Apple,
+  Beef,
+  Beer,
+  CakeSlice,
+  Candy,
+  Carrot,
+  Citrus,
+  Coffee,
+  Cookie,
+  Croissant,
+  CupSoda,
+  Donut,
+  Drumstick,
+  Egg,
+  Fish,
+  Flame,
+  GlassWater,
+  Ham,
+  Hamburger,
+  IceCreamCone,
+  Milk,
+  Pizza,
+  Popcorn,
+  Salad,
+  Sandwich,
+  Soup,
+  Utensils,
+  Wheat,
+  type LucideIcon,
+} from "lucide-react";
+
+/** Icons a category can be assigned. Keys are stored on the category. */
+export const MENU_ICONS = {
+  burger: { icon: Hamburger, label: "Burger" },
+  beef: { icon: Beef, label: "Meat" },
+  chicken: { icon: Drumstick, label: "Chicken" },
+  grill: { icon: Flame, label: "Grill / Kebab" },
+  ham: { icon: Ham, label: "Ham" },
+  fish: { icon: Fish, label: "Fish" },
+  pizza: { icon: Pizza, label: "Pizza" },
+  sandwich: { icon: Sandwich, label: "Sandwich" },
+  fries: { icon: Popcorn, label: "Fries / Snacks" },
+  egg: { icon: Egg, label: "Breakfast" },
+  croissant: { icon: Croissant, label: "Bakery" },
+  wheat: { icon: Wheat, label: "Grains" },
+  soup: { icon: Soup, label: "Soup / Stew" },
+  salad: { icon: Salad, label: "Salad" },
+  carrot: { icon: Carrot, label: "Veggies" },
+  apple: { icon: Apple, label: "Fruit" },
+  soda: { icon: CupSoda, label: "Soft drink" },
+  water: { icon: GlassWater, label: "Water" },
+  juice: { icon: Citrus, label: "Juice" },
+  coffee: { icon: Coffee, label: "Hot drink" },
+  milk: { icon: Milk, label: "Milk / Shake" },
+  beer: { icon: Beer, label: "Beer" },
+  icecream: { icon: IceCreamCone, label: "Ice cream" },
+  cake: { icon: CakeSlice, label: "Cake" },
+  donut: { icon: Donut, label: "Donut" },
+  cookie: { icon: Cookie, label: "Cookie" },
+  candy: { icon: Candy, label: "Sweets" },
+  utensils: { icon: Utensils, label: "General" },
+} satisfies Record<string, { icon: LucideIcon; label: string }>;
+
+export type IconKey = keyof typeof MENU_ICONS;
+
+export const ICON_KEYS = Object.keys(MENU_ICONS) as IconKey[];
+
+export const iconFor = (key: string): LucideIcon =>
+  (MENU_ICONS as Record<string, { icon: LucideIcon }>)[key]?.icon ?? Utensils;
