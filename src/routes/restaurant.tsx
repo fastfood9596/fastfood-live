@@ -6,6 +6,7 @@ import { CashierView } from "@/components/kds/CashierView";
 import { KitchenView } from "@/components/kds/KitchenView";
 import { ReadyBoard } from "@/components/kds/ReadyBoard";
 import { DEFAULT_STAFF_VIEW, parseStaffSearch } from "@/lib/portal-search";
+import { KdsProvider } from "@/lib/kds-store";
 
 export const Route = createFileRoute("/restaurant")({
   validateSearch: parseStaffSearch,
@@ -35,7 +36,7 @@ function RestaurantPortal() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [restaurantName, setRestaurantName] = useState("");
   const [restaurantStatus, setRestaurantStatus] = useState<string | null>(null);
-
+const [restaurantId, setRestaurantId] = useState<string | null>(null);
   // Auth Form State
   const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -57,18 +58,19 @@ function RestaurantPortal() {
     setUser(currentUser);
 
     if (currentUser?.email) {
-     const { data: allRestaurants } = await supabase
-        .from("restaurants")
-        .select("name, email, status, is_active");
+    const { data: allRestaurants } = await supabase
+  .from("restaurants")
+  .select("id, name, email, status, is_active");
 
       if (allRestaurants && allRestaurants.length > 0) {
         const matched = (allRestaurants as any[]).find(
           (r: any) => r.email && r.email.toLowerCase() === currentUser.email!.trim().toLowerCase()
         );
-        if (matched) {
-          setRestaurantName(matched.name || "");
-          setRestaurantStatus(matched.status || "pending");
-        }
+       if (matched) {
+  setRestaurantId(matched.id);
+  setRestaurantName(matched.name || "");
+  setRestaurantStatus(matched.status || "pending");
+}
       }
     }
     setCheckingAuth(false);
@@ -309,28 +311,30 @@ function RestaurantPortal() {
       </div>
     );
   }
-  // 3. Authenticated View: Render KDS Dashboard
+ // 3. Authenticated View: Render KDS Dashboard
   return (
-    <div className="min-h-screen bg-background">
-      <TopNav view={view} onChange={(v) => navigate({ search: { view: v }, replace: true })} />
+    <KdsProvider restaurantId={restaurantId}>
+      <div className="min-h-screen bg-background">
+        <TopNav view={view} onChange={(v) => navigate({ search: { view: v }, replace: true })} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1.5rem', background: '#1a1a1a' }}>
-        <div style={{ color: '#ff7a00', fontWeight: 'bold', fontSize: '1.1rem' }}>
-          Active Restaurant: {restaurantName || "Loading..."}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.5rem 1.5rem', background: '#1a1a1a' }}>
+          <div style={{ color: '#ff7a00', fontWeight: 'bold', fontSize: '1.1rem' }}>
+            Active Restaurant: {restaurantName || "Loading..."}
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{ background: '#333', color: '#fff', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #555' }}
+          >
+            Log Out
+          </button>
         </div>
-        <button
-          onClick={handleLogout}
-          style={{ background: '#333', color: '#fff', padding: '4px 12px', borderRadius: '4px', cursor: 'pointer', border: '1px solid #555' }}
-        >
-          Log Out
-        </button>
-      </div>
 
-      <main className="mx-auto max-w-[1600px] px-4 py-5 lg:px-6 lg:py-6">
-        {view === "cashier" && <CashierView />}
-        {view === "kitchen" && <KitchenView />}
-        {view === "board" && <ReadyBoard />}
-      </main>
-    </div>
+        <main className="mx-auto max-w-[1600px] px-4 py-5 lg:px-6 lg:py-6">
+          {view === "cashier" && <CashierView restaurantId={restaurantId} />}
+          {view === "kitchen" && <KitchenView restaurantId={restaurantId} />}
+          {view === "board" && <ReadyBoard restaurantId={restaurantId} />}
+        </main>
+      </div>
+    </KdsProvider>
   );
 }

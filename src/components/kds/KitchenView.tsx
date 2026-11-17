@@ -6,7 +6,11 @@ import { OrderTypeBadge, ORDER_TYPE_BORDER, safeOrderType } from "./badges";
 
 type Filter = "all" | "new" | "preparing";
 
-export function KitchenView() {
+interface KitchenViewProps {
+  restaurantId: string | null;
+}
+
+export function KitchenView({ restaurantId }: KitchenViewProps) {
   const { orders, lastBumped, recall } = useKds();
   const now = useNow();
   const [filter, setFilter] = useState<Filter>("all");

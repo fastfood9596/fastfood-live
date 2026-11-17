@@ -3,7 +3,11 @@ import { cn } from "@/lib/utils";
 import { useKds, useNow } from "@/lib/kds-store";
 import { OrderTypeBadge, ORDER_TYPE_BORDER, safeOrderType } from "./badges";
 
-export function ReadyBoard() {
+interface ReadyBoardProps {
+  restaurantId: string | null;
+}
+
+export function ReadyBoard({ restaurantId }: ReadyBoardProps) {
   const { orders, advance } = useKds();
   const now = useNow();
   const preparing = orders

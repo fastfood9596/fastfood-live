@@ -15,11 +15,15 @@ export function CustomerMenu({
   trackingId,
   onTrack,
   onBackToMenu,
+  restaurantId,
+  customerId,
 }: {
   table?: string | undefined;
   trackingId?: string | undefined;
   onTrack: (orderId: string) => void;
   onBackToMenu: () => void;
+  restaurantId?: string | null;
+  customerId?: string | null;
 }) {
   const { categories, items, orders, menuReady, ordersReady } = useKds();
   const [query, setQuery] = useState("");
@@ -185,6 +189,7 @@ export function CustomerMenu({
         cart={cart}
         setCart={setCart}
         table={table}
+        restaurantId={restaurantId}
         onPlaced={(orderId) => {
           setCart([]);
           setCartOpen(false);

@@ -133,6 +133,7 @@ export type NewOrderInput = {
   notes: string[];
   /** "online" = customer QR menu; lands in the cashier's Online Orders queue. */
   source?: OrderSource | undefined;
+  restaurantId?: string | null | undefined;
 };
 
 export function orderLine(menu: MenuItem[], menuId: string, qty: number, customization?: Customization): OrderItem | null {
@@ -154,11 +155,14 @@ export function orderLine(menu: MenuItem[], menuId: string, qty: number, customi
  * Row for a new order. Online (QR) orders wait for the cashier; counter orders go straight
  * to the kitchen. The database assigns the order number. Total includes tax.
  */
+
 export function newOrderRow(input: NewOrderInput, menu: MenuItem[], now = Date.now()): OrderInsert {
   const online = input.source === "online";
   const items = input.items.flatMap((i) => orderLine(menu, i.menuId, i.qty, i.customization) ?? []);
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
   return {
+   restaurant_id: input.restaurantId || null,
+    customer_id: (input as any).customerId || null,
     customer_name: input.customer.trim() || null,
     order_type: input.type,
     status: online ? "awaiting" : "new",
@@ -168,5 +172,5 @@ export function newOrderRow(input: NewOrderInput, menu: MenuItem[], now = Date.n
     items: items as unknown as Json,
     total_amount: Math.round(withTax(subtotal).total * 100) / 100,
     kitchen_at: online ? null : new Date(now).toISOString(),
-  };
+  } as OrderInsert;
 }

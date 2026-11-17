@@ -28,6 +28,7 @@ export function CartDrawer({
   cart,
   setCart,
   table,
+  restaurantId, // Type will now match string | null | undefined
   onPlaced,
 }: {
   open: boolean;
@@ -35,6 +36,7 @@ export function CartDrawer({
   cart: CartLine[];
   setCart: Dispatch<SetStateAction<CartLine[]>>;
   table?: string | undefined;
+  restaurantId?: string | null | undefined; // <-- Update this line
   onPlaced: (orderId: string) => void;
 }) {
   const { items, categories, placeOrder } = useKds();
@@ -71,6 +73,7 @@ export function CartDrawer({
         type,
         notes: [],
         payment: customerPayment(input),
+        restaurantId, // <-- Stamped with the correct restaurant ID
         items: cart.map((l) => ({ menuId: l.menuId, qty: l.qty, customization: l.customization })),
       });
       onPlaced(order.id);

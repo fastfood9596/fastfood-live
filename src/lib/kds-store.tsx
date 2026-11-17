@@ -105,7 +105,15 @@ const globalForKds = globalThis as typeof globalThis & {
 };
 const KdsContext = (globalForKds.__kdsContext ??= createContext<Store | null>(null));
 
-export function KdsProvider({ children }: { children: ReactNode }) {
+export function KdsProvider({ 
+  children, 
+  restaurantId: restaurantIdProp 
+}: { 
+  children: ReactNode; 
+  restaurantId?: string | null 
+}) {
+  const restaurantId = restaurantIdProp || import.meta.env["VITE_RESTAURANT_ID"];
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [lastBumpedId, setLastBumpedId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -124,9 +132,11 @@ export function KdsProvider({ children }: { children: ReactNode }) {
   }, [orders, items, categories]);
 
   const loadMenu = useCallback(async () => {
+    if (!restaurantId) return;
+
     const [cats, dishes] = await Promise.all([
-      supabase.from("categories").select("*").order("sort_order").order("created_at"),
-      supabase.from("menu_items").select("*").order("created_at"),
+      supabase.from("categories").select("*").eq("restaurant_id" as any, restaurantId).order("sort_order").order("created_at"),
+      supabase.from("menu_items").select("*").eq("restaurant_id" as any, restaurantId).order("created_at"),
     ]);
     if (cats.error || dishes.error) {
       console.error(cats.error ?? dishes.error);
@@ -136,13 +146,16 @@ export function KdsProvider({ children }: { children: ReactNode }) {
     setCategories(sortCategories(cats.data.map(categoryFromRow)));
     setItems(dishes.data.map(itemFromRow));
     setMenuReady(true);
-  }, []);
+  }, [restaurantId]);
 
   const loadOrders = useCallback(async () => {
+    if (!restaurantId) return;
+
     const since = new Date(Date.now() - ORDER_WINDOW_MS).toISOString();
     const { data, error } = await supabase
       .from("orders")
       .select("*")
+      .eq("restaurant_id" as any, restaurantId)
       .gte("created_at", since)
       .order("created_at")
       .limit(1000);
@@ -153,16 +166,18 @@ export function KdsProvider({ children }: { children: ReactNode }) {
     }
     setOrders(data.map(orderFromRow));
     setOrdersReady(true);
-  }, []);
+  }, [restaurantId]);
 
-  // Initial load + live changes from every device. Reload after a reconnect to catch missed changes.
+  // Initial load + live changes scoped strictly to this restaurant ID
   useEffect(() => {
+    if (!restaurantId) return;
+
     void loadMenu();
     void loadOrders();
     let subscribedBefore = false;
     const channel = supabase
-      .channel(`kds-${Math.random().toString(36).slice(2)}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (p) => {
+      .channel(`kds-${restaurantId}-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `restaurant_id=eq.${restaurantId}` }, (p) => {
         if (p.eventType === "DELETE") {
           const id = (p.old as Partial<OrderRow>).id;
           setOrders((prev) => prev.filter((o) => o.id !== id));
@@ -171,7 +186,7 @@ export function KdsProvider({ children }: { children: ReactNode }) {
         const order = orderFromRow(p.new as OrderRow);
         setOrders((prev) => upsert(prev, order));
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, (p) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories", filter: `restaurant_id=eq.${restaurantId}` }, (p) => {
         if (p.eventType === "DELETE") {
           const id = (p.old as Partial<CategoryRow>).id;
           setCategories((prev) => prev.filter((c) => c.id !== id));
@@ -180,7 +195,7 @@ export function KdsProvider({ children }: { children: ReactNode }) {
         const cat = categoryFromRow(p.new as CategoryRow);
         setCategories((prev) => sortCategories(upsert(prev, cat)));
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items" }, (p) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "menu_items", filter: `restaurant_id=eq.${restaurantId}` }, (p) => {
         if (p.eventType === "DELETE") {
           const id = (p.old as Partial<MenuItemRow>).id;
           setItems((prev) => prev.filter((i) => i.id !== id));
@@ -204,7 +219,9 @@ export function KdsProvider({ children }: { children: ReactNode }) {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [loadMenu, loadOrders]);
+  }, [restaurantId, loadMenu, loadOrders]);
+
+  // ... (keep the rest of the store functions: placeOrder, advance, etc. exactly the same)
 
   const failed = useCallback(
     (what: string, error: unknown) => {
@@ -299,7 +316,7 @@ export function KdsProvider({ children }: { children: ReactNode }) {
     [updateOrder],
   );
 
-  const saveCategory: Store["saveCategory"] = useCallback(
+ const saveCategory: Store["saveCategory"] = useCallback(
     (input) => {
       const existing = input.id ? categoriesRef.current.find((c) => c.id === input.id) : undefined;
       const saved: Category = {
@@ -310,13 +327,20 @@ export function KdsProvider({ children }: { children: ReactNode }) {
         sortOrder: existing?.sortOrder ?? categoriesRef.current.reduce((max, c) => Math.max(max, c.sortOrder ?? 0), 0) + 1,
       };
       setCategories((prev) => sortCategories(upsert(prev, saved)));
-      void supabase
+    void supabase
         .from("categories")
-        .upsert({ id: saved.id, name: saved.label, icon: saved.icon, image_url: saved.image ?? null, sort_order: saved.sortOrder ?? 0 })
+        .upsert({ 
+          id: saved.id, 
+          name: saved.label, 
+          icon: saved.icon, 
+          image_url: saved.image ?? null, 
+          sort_order: saved.sortOrder ?? 0,
+          restaurant_id: restaurantId 
+        } as any) // <-- Add "as any" here
         .then(({ error }) => error && failed("The category", error));
       return saved;
     },
-    [failed],
+    [failed, restaurantId],
   );
 
   const deleteCategory = useCallback(
@@ -354,7 +378,8 @@ export function KdsProvider({ children }: { children: ReactNode }) {
           category_id: saved.categoryId,
           is_available: saved.available,
           image_url: saved.image ?? null,
-        })
+          restaurant_id: restaurantId, // <-- Add this
+        } as any) // <-- Add this
         .then(({ error }) => error && failed("The menu item", error));
       return saved;
     },

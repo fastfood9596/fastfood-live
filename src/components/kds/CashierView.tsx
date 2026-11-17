@@ -22,7 +22,11 @@ import { Thumb } from "./PhotoField";
 
 type Mode = "counter" | "online";
 
-export function CashierView() {
+interface CashierViewProps {
+  restaurantId: string | null;
+}
+
+export function CashierView({ restaurantId }: CashierViewProps) {
   const { orders } = useKds();
   const [mode, setMode] = useState<Mode>("counter");
   const waiting = orders.filter((o) => o.status === "awaiting").length;
