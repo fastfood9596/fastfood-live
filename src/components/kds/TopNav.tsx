@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChefHat, Flame, MonitorCheck, QrCode, ReceiptText, Timer } from "lucide-react";
+import { ChefHat, Flame, MonitorCheck, QrCode, ReceiptText, Timer, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDuration, useKds, useNow } from "@/lib/kds-store";
+import { formatDuration, useKds, useNow, type MpesaConfig } from "@/lib/kds-store";
 import { MenuManager } from "./MenuManager";
 
 export type ViewId = "cashier" | "kitchen" | "board";
@@ -55,6 +55,154 @@ function LiveSyncBadge() {
   );
 }
 
+function MpesaSettingsModal() {
+  const { mpesaConfig, saveMpesaConfig } = useKds();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<MpesaConfig>(mpesaConfig);
+
+  // Keep form in sync when modal opens
+  useEffect(() => {
+    if (open) setForm(mpesaConfig);
+  }, [open, mpesaConfig]);
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    saveMpesaConfig(form);
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Configure Lipa na M-Pesa"
+        title="Lipa na M-Pesa Settings"
+        className="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground sm:px-2.5"
+      >
+        <Wallet className="size-4 text-emerald-500" aria-hidden />
+        <span className="hidden whitespace-nowrap 2xl:inline">M-Pesa Config</span>
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="grid size-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                  <Wallet className="size-4" />
+                </div>
+                <h2 className="text-lg font-bold">Lipa na M-Pesa Settings</h2>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-muted-foreground hover:text-foreground text-sm font-semibold px-2 py-1 rounded-md"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-5">
+              Configure your restaurant's Buy Goods Till Number or Paybill details. Customers will see these instructions during manual checkout.
+            </p>
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Payment Mode
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, mode: "till" }))}
+                    className={cn(
+                      "rounded-lg border py-2.5 text-sm font-semibold transition-all",
+                      form.mode === "till"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-500 shadow-sm"
+                        : "border-border text-muted-foreground hover:bg-secondary",
+                    )}
+                  >
+                    Till Number (Buy Goods)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, mode: "paybill" }))}
+                    className={cn(
+                      "rounded-lg border py-2.5 text-sm font-semibold transition-all",
+                      form.mode === "paybill"
+                        ? "border-emerald-500 bg-emerald-500/10 text-emerald-500 shadow-sm"
+                        : "border-border text-muted-foreground hover:bg-secondary",
+                    )}
+                  >
+                    Paybill
+                  </button>
+                </div>
+              </div>
+
+              {form.mode === "till" ? (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                    Till Number (Store Number)
+                  </label>
+                  <input
+                    type="text"
+                    value={form.tillNumber}
+                    onChange={(e) => setForm((prev) => ({ ...prev, tillNumber: e.target.value }))}
+                    placeholder="e.g. 5432100"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                      Business Number (Paybill)
+                    </label>
+                    <input
+                      type="text"
+                      value={form.businessNumber}
+                      onChange={(e) => setForm((prev) => ({ ...prev, businessNumber: e.target.value }))}
+                      placeholder="e.g. 247247"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                      Account Number
+                    </label>
+                    <input
+                      type="text"
+                      value={form.accountNumber}
+                      onChange={(e) => setForm((prev) => ({ ...prev, accountNumber: e.target.value }))}
+                      placeholder="e.g. RESTAURANT or Leave blank for Name"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border mt-6">
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-md hover:bg-emerald-500 transition-colors"
+                >
+                  Save M-Pesa Details
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function TopNav({ view, onChange }: { view: ViewId; onChange: (v: ViewId) => void }) {
   const { orders } = useKds();
   const counts: Record<ViewId, number> = {
@@ -81,6 +229,7 @@ export function TopNav({ view, onChange }: { view: ViewId; onChange: (v: ViewId)
         <div className="ml-auto flex items-center gap-1.5 sm:gap-2 lg:order-3 lg:ml-0">
           <ShiftTimer />
           <LiveSyncBadge />
+          <MpesaSettingsModal />
           <Link
             to="/"
             target="_blank"
@@ -107,6 +256,7 @@ export function TopNav({ view, onChange }: { view: ViewId; onChange: (v: ViewId)
                 key={t.id}
                 role="tab"
                 aria-selected={active}
+                onChange={() => onChange(t.id)}
                 onClick={() => onChange(t.id)}
                 className={cn(
                   "relative flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold transition-all",

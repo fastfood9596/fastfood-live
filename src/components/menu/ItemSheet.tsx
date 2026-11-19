@@ -73,69 +73,9 @@ function SheetBody({
             </DrawerDescription>
           </div>
 
-          <fieldset>
-            <Legend>Portion size</Legend>
-            <div role="radiogroup" aria-label="Portion size" className="grid grid-cols-2 gap-2">
-              {PORTIONS.map((p) => {
-                const on = portion === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    onClick={() => setPortion(p.id)}
-                    className={cn(
-                      "flex flex-col items-start rounded-xl border px-4 py-3 text-left transition-colors",
-                      on ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/50",
-                    )}
-                  >
-                    <span className="font-semibold">{p.label}</span>
-                    <span className="font-mono text-xs tabular text-muted-foreground">
-                      {p.extra ? `+ ${money(p.extra)}` : "Included"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
+          
 
-          <fieldset>
-            <Legend>Extra sauce</Legend>
-            <div className="grid grid-cols-2 gap-2">
-              {SAUCES.map((s) => {
-                const on = sauces.includes(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => setSauces((list) => (on ? list.filter((x) => x !== s.id) : [...list, s.id]))}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left text-sm transition-colors",
-                      on ? "border-primary bg-primary/10" : "border-border bg-background hover:border-primary/50",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "grid size-5 shrink-0 place-items-center rounded-md border",
-                        on ? "border-primary bg-primary text-primary-foreground" : "border-input",
-                      )}
-                    >
-                      {on && <Check className="size-3.5" strokeWidth={3} aria-hidden />}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-semibold leading-tight">{s.label}</span>
-                      <span className="font-mono text-xs tabular text-muted-foreground">
-                        {s.extra ? `+ ${money(s.extra)}` : "Free"}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-
+         
           <fieldset>
             <Legend>Special instructions</Legend>
             <div className="mb-2.5 flex flex-wrap gap-2">
@@ -162,7 +102,7 @@ function SheetBody({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               maxLength={60}
-              placeholder="Anything else? e.g. No onions"
+              placeholder="Anything else? e.g. Extra salt"
               aria-label="Other instructions"
               className="w-full rounded-xl border border-input bg-background px-3.5 py-3 text-base outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
             />

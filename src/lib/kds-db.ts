@@ -100,6 +100,9 @@ export function orderFromRow(r: OrderRow): Order {
     id: r.id,
     number: r.order_number,
     customer: r.customer_name?.trim() || `Guest ${r.order_number}`,
+    phone:
+      (r as { phone?: string | null }).phone ??
+      (parsePayment(r.payment) as { phone?: string } | undefined)?.phone,
     type: normalizeOrderType(r.order_type),
     items: parseItems(r.items),
     status: normalizeStatus(r.status),
@@ -127,6 +130,7 @@ export function orderStateRow(o: Order): OrderUpdate {
 
 export type NewOrderInput = {
   customer: string;
+  phone?: string | undefined;
   type: OrderType;
   items: { menuId: string; qty: number; customization?: Customization | undefined }[];
   payment: Payment;
@@ -167,7 +171,10 @@ export function newOrderRow(input: NewOrderInput, menu: MenuItem[], now = Date.n
     order_type: input.type,
     status: online ? "awaiting" : "new",
     source: online ? "online" : "counter",
-    payment: input.payment as unknown as Json,
+    payment: {
+        ...(input.payment as Record<string, unknown>),
+        ...(input.phone?.trim() ? { phone: input.phone.trim() } : {}),
+      } as unknown as Json,
     notes: input.notes,
     items: items as unknown as Json,
     total_amount: Math.round(withTax(subtotal).total * 100) / 100,

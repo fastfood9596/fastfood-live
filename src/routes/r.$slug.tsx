@@ -106,16 +106,10 @@ function RestaurantPortalBySlug() {
           return;
         }
 
-        const { data: itemsData } = await (supabase as any)
-          .from("order_items")
-          .select("*, menu_items(name)")
-          .eq("order_id", order);
-
-        const fullOrder = {
-          ...orderData,
-          order_items: itemsData || [],
-        };
-
+       const fullOrder = {
+      ...orderData,
+      items: orderData.items || [],
+    };
         setLocalOrder(mapSupabaseOrderToLocal(fullOrder));
       } catch (err) {
         console.error("Error fetching order:", err);
@@ -150,7 +144,7 @@ function RestaurantPortalBySlug() {
       type: row.dining_mode || row.type || "takeaway",
       customer: row.customer_name || row.customer || session?.user?.email?.split("@")[0] || "Customer",
       status: row.status || "pending",
-      items: (row.order_items || []).map((item: any, idx: number) => ({
+      items: (row.items || []).map((item: any, idx: number) => ({
         key: item.id || idx,
         menuItemId: item.menu_item_id,
         name: item.menu_items?.name || item.name || "Item",

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle2, Clock, QrCode, Send, Smartphone, Banknote } from "lucide-react";
+import { CheckCircle2, Clock, Phone, QrCode, Send, Smartphone, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDuration, money, orderTotal, useKds, useNow, type Order } from "@/lib/kds-store";
 import { canDispatch, withTax, type Payment, type PaymentMethod, type PaymentStatus } from "@/lib/orders";
@@ -60,10 +60,20 @@ function OnlineOrderCard({ order, now, onSent }: { order: Order; now: number | n
             <span className="font-mono text-2xl font-extrabold tabular">#{order.number}</span>
             <OrderTypeBadge type={order.type} />
           </div>
-          <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
+         <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-muted-foreground">
             <QrCode className="size-3.5 shrink-0" aria-hidden />
             {order.customer}
           </p>
+          {(order.phone || order.payment.phone) && (
+            <a
+              href={`tel:${order.phone || order.payment.phone}`}
+              className="mt-1 inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-primary hover:underline"
+              title="Call customer"
+            >
+              <Phone className="size-3 shrink-0" aria-hidden />
+              {order.phone || order.payment.phone}
+            </a>
+          )}
         </div>
         <span className="flex items-center gap-1 font-mono text-sm tabular text-muted-foreground" title="Time since the customer ordered">
           <Clock className="size-3.5" aria-hidden />

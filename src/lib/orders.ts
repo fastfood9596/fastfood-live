@@ -51,8 +51,8 @@ export function customizationLabels(c: Customization): string[] {
 /* --------------------------------- M-Pesa --------------------------------- */
 
 /**
- * Turn a Kenyan mobile number into the 2547XXXXXXXX / 2541XXXXXXXX form M-Pesa uses.
- * Accepts 07.., 01.., 7.., +254.., 254.. with spaces or dashes. Returns null if invalid.
+- Turn a Kenyan mobile number into the 2547XXXXXXXX / 2541XXXXXXXX form M-Pesa uses.
+- Accepts 07.., 01.., 7.., +254.., 254.. with spaces or dashes. Returns null if invalid.
  */
 export function normalizeMpesaPhone(input: string): string | null {
   const digits = input.replace(/[\s\-()]/g, "").replace(/^\+/, "");
@@ -84,7 +84,7 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   cash: "Cash",
 };
 
-export const INSTRUCTION_TAGS = ["Extra Salt", "No Vinegar", "Separate Packaging"] as const;
+export const INSTRUCTION_TAGS = ["Separate Packaging"] as const;
 
 export const TAX_RATE = 0.08;
 
@@ -113,7 +113,7 @@ export const cartLineKey = (menuId: string, c: Customization) =>
   [menuId, c.portion, [...c.sauces].sort().join("+"), c.notes.map((n) => n.trim().toLowerCase()).join("|")].join("::");
 
 /** Customer QR orders: eat at a table or pick up at the counter. */
-export type CustomerOrderType = Extract<OrderType, "dine-in" | "takeaway">;
+export type CustomerOrderType = OrderType; // allows "dine-in" | "takeaway" | "delivery"
 export type CustomerPayChoice = "mpesa" | "counter";
 
 export type CheckoutInput = {
@@ -126,17 +126,20 @@ export type CheckoutInput = {
 
 /** First problem with the customer's checkout details, or null if it can be submitted. */
 export function validateCheckout(input: CheckoutInput): string | null {
-  if (input.type === "dine-in" && !/^\d{1,3}$/.test(input.table.trim())) return "Enter your table number.";
+  
   if (input.type === "takeaway" && !input.name.trim()) return "Enter a name for pick-up.";
-  if (input.pay === "mpesa" && !normalizeMpesaPhone(input.phone))
-    return "Enter your M-Pesa number, e.g. 0712 345 678 or 0110 123 456.";
   return null;
 }
 
 /** Name shown on staff screens for a customer order, e.g. "Table 7 · Achieng" or "Achieng". */
 export function customerLabel(input: Pick<CheckoutInput, "type" | "table" | "name">) {
   const name = input.name.trim();
-  if (input.type === "dine-in") return name ? `Table ${input.table.trim()} · ${name}` : `Table ${input.table.trim()}`;
+  const table = input.table.trim();
+  if (input.type === "dine-in") {
+    if (table && name) return `Table ${table} · ${name}`;
+    if (table) return `Table ${table}`;
+    return name || "Dine-in";
+  }
   return name;
 }
 

@@ -37,6 +37,7 @@ export type Order = {
   id: string;
   number: number;
   customer: string;
+  phone?: string | undefined;
   type: OrderType;
   items: OrderItem[];
   status: OrderStatus;
@@ -52,6 +53,19 @@ export type Order = {
 };
 
 /** connecting = first load; live = receiving changes from other devices; offline = connection lost. */
+export type MpesaConfig = {
+  mode: "till" | "paybill";
+  tillNumber: string;
+  businessNumber: string;
+  accountNumber: string;
+};
+
+const DEFAULT_MPESA_CONFIG: MpesaConfig = {
+  mode: "till",
+  tillNumber: "",
+  businessNumber: "",
+  accountNumber: "",
+};
 export type SyncStatus = "connecting" | "live" | "offline";
 
 export const orderTotal = (o: Pick<Order, "items">) =>
@@ -91,6 +105,8 @@ type Store = {
   menuReady: boolean;
   ordersReady: boolean;
   sync: SyncStatus;
+  mpesaConfig: MpesaConfig;
+  saveMpesaConfig: (config: MpesaConfig) => void;
   saveCategory: (input: Omit<Category, "id"> & { id?: string | undefined }) => Category;
   deleteCategory: (id: string) => void;
   saveItem: (input: Omit<MenuItem, "id"> & { id?: string | undefined }) => MenuItem;
@@ -121,6 +137,40 @@ export function KdsProvider({
   const [menuReady, setMenuReady] = useState(false);
   const [ordersReady, setOrdersReady] = useState(false);
   const [sync, setSync] = useState<SyncStatus>("connecting");
+  const storageKey = `kds-mpesa-${restaurantId || "default"}`;
+  const [mpesaConfig, setMpesaConfig] = useState<MpesaConfig>(() => {
+    if (typeof window === "undefined") return DEFAULT_MPESA_CONFIG;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved ? { ...DEFAULT_MPESA_CONFIG, ...JSON.parse(saved) } : DEFAULT_MPESA_CONFIG;
+    } catch {
+      return DEFAULT_MPESA_CONFIG;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      setMpesaConfig(saved ? { ...DEFAULT_MPESA_CONFIG, ...JSON.parse(saved) } : DEFAULT_MPESA_CONFIG);
+    } catch {
+      setMpesaConfig(DEFAULT_MPESA_CONFIG);
+    }
+  }, [storageKey]);
+
+  const saveMpesaConfig = useCallback(
+    (config: MpesaConfig) => {
+      setMpesaConfig(config);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(config));
+        toast.success("Lipa na M-Pesa details saved.");
+      } catch (e) {
+        console.error(e);
+        toast.error("Could not save M-Pesa settings.");
+      }
+    },
+    [storageKey],
+  );
 
   const ordersRef = useRef(orders);
   const itemsRef = useRef(items);
@@ -430,6 +480,8 @@ export function KdsProvider({
       saveItem,
       deleteItem,
       setItemAvailable,
+      mpesaConfig,       
+      saveMpesaConfig,
     }),
     [
       orders,
@@ -450,6 +502,8 @@ export function KdsProvider({
       saveItem,
       deleteItem,
       setItemAvailable,
+      mpesaConfig,   
+      saveMpesaConfig,
     ],
   );
 

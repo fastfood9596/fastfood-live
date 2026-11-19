@@ -1,5 +1,5 @@
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
-import { Minus, Plus, ShoppingBag, Smartphone, Store, Trash2, Utensils } from "lucide-react";
+import { Check, Minus, Plus, Utensils, ShoppingBag, Truck, Trash2, Smartphone, Store, Wallet, Copy, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { money, useKds } from "@/lib/kds-store";
@@ -28,7 +28,7 @@ export function CartDrawer({
   cart,
   setCart,
   table,
-  restaurantId, // Type will now match string | null | undefined
+  restaurantId,
   onPlaced,
 }: {
   open: boolean;
@@ -36,20 +36,27 @@ export function CartDrawer({
   cart: CartLine[];
   setCart: Dispatch<SetStateAction<CartLine[]>>;
   table?: string | undefined;
-  restaurantId?: string | null | undefined; // <-- Update this line
+  restaurantId?: string | null | undefined;
   onPlaced: (orderId: string) => void;
 }) {
-  const { items, categories, placeOrder } = useKds();
+  const { items, categories, placeOrder, mpesaConfig } = useKds();
   const [type, setType] = useState<CustomerOrderType>(table ? "dine-in" : "takeaway");
   const [tableNo, setTableNo] = useState(table ?? "");
   const [name, setName] = useState("");
-  const [pay, setPay] = useState<CustomerPayChoice>("mpesa");
   const [phone, setPhone] = useState("");
+  const [pay, setPay] = useState<CustomerPayChoice>("mpesa");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { count, subtotal, unavailable } = cartTotals(cart, items);
   const { tax, total } = withTax(subtotal);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -58,6 +65,7 @@ export function CartDrawer({
       setError(`${unavailable.join(", ")} just sold out. Remove it to continue.`);
       return;
     }
+    // Pass empty string for phone since we use manual Lipa na M-Pesa verification
     const input = { type, table: tableNo, name, pay, phone };
     const problem = validateCheckout(input);
     if (problem) {
@@ -70,10 +78,11 @@ export function CartDrawer({
       const order = await placeOrder({
         source: "online",
         customer: customerLabel(input),
+        phone: input.phone,
         type,
         notes: [],
         payment: customerPayment(input),
-        restaurantId, // <-- Stamped with the correct restaurant ID
+        restaurantId,
         items: cart.map((l) => ({ menuId: l.menuId, qty: l.qty, customization: l.customization })),
       });
       onPlaced(order.id);
@@ -138,7 +147,7 @@ export function CartDrawer({
 
             <fieldset>
               <Legend>How are you eating?</Legend>
-              <div role="radiogroup" aria-label="Order type" className="grid grid-cols-2 gap-2">
+              <div role="radiogroup" aria-label="Order type" className="grid grid-cols-3 gap-2">
                 <ChoiceCard
                   on={type === "dine-in"}
                   onClick={() => setType("dine-in")}
@@ -155,20 +164,18 @@ export function CartDrawer({
                   sub="Pick-up at counter"
                   onClass={ORDER_TYPE_SOLID.takeaway}
                 />
+                <ChoiceCard
+                  on={type === "delivery"}
+                  onClick={() => setType("delivery")}
+                  icon={Truck}
+                  title="Delivery"
+                  sub="To your door"
+                  onClass={ORDER_TYPE_SOLID.delivery}
+                />
               </div>
               <div className="mt-3 grid gap-2">
-                {type === "dine-in" && (
-                  <Field label="Table number">
-                    <input
-                      value={tableNo}
-                      onChange={(e) => setTableNo(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                      inputMode="numeric"
-                      placeholder="e.g. 7"
-                      className={inputClass}
-                    />
-                  </Field>
-                )}
-                <Field label={type === "takeaway" ? "Name for pick-up" : "Your name (optional)"}>
+                
+                <Field label={type === "takeaway" ? "Name for pick-up" : type === "delivery" ? "Your name for delivery" : "Your name (optional)"}>
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -178,6 +185,28 @@ export function CartDrawer({
                     className={inputClass}
                   />
                 </Field>
+                {type === "delivery" && (
+                  <Field label="Delivery location / address">
+                    <input
+                      value={tableNo}
+                      onChange={(e) => setTableNo(e.target.value)}
+                      maxLength={60}
+                      placeholder="e.g. Lower Kabete"
+                      className={inputClass}
+                    />
+                  </Field>
+                )}
+                <Field label={type === "delivery" ? "Phone number for delivery" : "Phone number (for pickup / updates)"}>
+  <input
+    value={phone}
+    onChange={(e) => setPhone(e.target.value)}
+    type="tel"
+    inputMode="tel"
+    autoComplete="tel"
+    placeholder="e.g. 0712 345 678"
+    className={cn(inputClass, "font-mono")}
+  />
+</Field>
               </div>
             </fieldset>
 
@@ -188,32 +217,69 @@ export function CartDrawer({
                   on={pay === "mpesa"}
                   onClick={() => setPay("mpesa")}
                   icon={Smartphone}
-                  title="M-Pesa Express"
-                  sub="STK Push to phone"
-                  onClass="bg-success text-success-foreground"
+                  title="Lipa na M-Pesa"
+                  sub="Till / Paybill transfer"
+                  onClass="bg-emerald-600 text-white"
                 />
                 <ChoiceCard
                   on={pay === "counter"}
                   onClick={() => setPay("counter")}
                   icon={Store}
                   title="Pay at Counter"
-                  sub="Cash or M-Pesa"
+                  sub="Cash or Card"
                   onClass="bg-secondary text-foreground ring-2 ring-primary"
                 />
               </div>
+
               {pay === "mpesa" && (
-                <div className="mt-3">
-                  <Field label="M-Pesa phone number">
-                    <input
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel"
-                      placeholder="07XX XXX XXX or 01XX XXX XXX"
-                      className={cn(inputClass, "font-mono")}
-                    />
-                  </Field>
+                <div className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
+                      <Wallet className="size-4" />
+                      <span>M-Pesa Payment Details</span>
+                    </div>
+                    <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-300">
+                      {mpesaConfig.mode === "till" ? "Buy Goods & Services" : "Paybill"}
+                    </span>
+                  </div>
+
+                  {mpesaConfig.mode === "till" ? (
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">Till Number (Buy Goods)</span>
+                      <div className="flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2">
+                        <span className="font-mono text-base font-bold">{mpesaConfig.tillNumber || "Not configured"}</span>
+                        {mpesaConfig.tillNumber && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(mpesaConfig.tillNumber)}
+                            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-500"
+                          >
+                            {copied ? <CheckCheck className="size-4" /> : <Copy className="size-4" />}
+                            <span>{copied ? "Copied" : "Copy"}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground block">Business No.</span>
+                        <div className="flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2">
+                          <span className="font-mono text-sm font-bold">{mpesaConfig.businessNumber || "—"}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-xs text-muted-foreground block">Account No.</span>
+                        <div className="flex items-center justify-between bg-background border border-border rounded-lg px-3 py-2">
+                          <span className="font-mono text-sm font-bold truncate">{mpesaConfig.accountNumber || "Order"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Please complete the payment on your phone using the details above. Staff will verify your transaction upon order submission.
+                  </p>
                 </div>
               )}
             </fieldset>
@@ -239,7 +305,7 @@ export function CartDrawer({
               disabled={count === 0 || submitting}
               className="flex h-14 w-full items-center justify-between rounded-2xl bg-gradient-primary px-5 font-bold text-primary-foreground shadow-glow transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:shadow-none"
             >
-              <span>{submitting ? "Sending your order…" : pay === "mpesa" ? "Pay with M-Pesa" : "Place order"}</span>
+              <span>{submitting ? "Sending your order…" : pay === "mpesa" ? "Place M-Pesa Order" : "Place Order"}</span>
               <span className="font-mono tabular">{money(total)}</span>
             </button>
           </div>
