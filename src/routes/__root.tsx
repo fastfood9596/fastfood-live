@@ -80,9 +80,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Fast Food KDS" },
-      { name: "description", content: "Kitchen Display System for Fast Food staff." },
-      { name: "theme-color", content: "#1c1916" },
+     { title: "Cravinos KDS" },
+    { name: "description", content: "Kitchen Display System for Cravinos staff." },
+    { name: "theme-color", content: "#000000" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -96,6 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/Cravinos.jpg", type: "image/jpeg" },
+      { rel: "manifest", href: "/manifest.json" },
     ],
   }),
   shellComponent: RootShell,

@@ -111,7 +111,7 @@ function AdminRoute() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f1117', color: '#fff', fontFamily: 'sans-serif' }}>
         <div style={{ background: '#181b22', padding: '2.5rem', borderRadius: '10px', border: '1px solid #2a2e39', width: '100%', maxWidth: '400px' }}>
-          <span style={{ fontSize: '0.75rem', color: '#ff7a00', letterSpacing: '1px', fontWeight: 'bold' }}>FAST FOOD KDS</span>
+          <span style={{ fontSize: '0.75rem', color: '#ff7a00', letterSpacing: '1px', fontWeight: 'bold' }}>Cravinos KDS</span>
           <h2 style={{ margin: '0.5rem 0 1.5rem 0', fontSize: '1.5rem' }}>Superadmin Login</h2>
           {loginError && <p style={{ color: '#f87171', fontSize: '0.9rem', marginBottom: '1rem' }}>{loginError}</p>}
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -146,7 +146,7 @@ function AdminRoute() {
     <div style={{ padding: '2.5rem', color: '#fff', background: '#0f1117', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <span style={{ fontSize: '0.8rem', color: '#ff7a00', letterSpacing: '1px', fontWeight: 'bold' }}>FAST FOOD KDS</span>
+          <span style={{ fontSize: '0.8rem', color: '#ff7a00', letterSpacing: '1px', fontWeight: 'bold' }}>Cravinos KDS</span>
           <h1 style={{ margin: '0.2rem 0 0 0', fontSize: '1.75rem' }}>SUPERADMIN CONSOLE</h1>
         </div>
         <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', background: '#2a2e39', color: '#fff', border: '1px solid #3a3f4d', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>

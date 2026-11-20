@@ -219,7 +219,7 @@ export function TopNav({ view, onChange }: { view: ViewId; onChange: (v: ViewId)
             <Flame className="size-5 text-primary-foreground" aria-hidden />
           </div>
           <div className="leading-tight">
-            <h1 className="text-lg font-extrabold tracking-tight">Fast Food</h1>
+            <h1 className="text-lg font-extrabold tracking-tight">Cravinos</h1>
             <p className="hidden text-[11px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
               Kitchen Display System
             </p>

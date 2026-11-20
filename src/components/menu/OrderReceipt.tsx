@@ -36,7 +36,7 @@ export function OrderReceipt({ order, onOrderMore }: { order: Order; onOrderMore
           <div className="grid size-9 place-items-center rounded-xl bg-gradient-primary shadow-glow">
             <Flame className="size-5 text-primary-foreground" aria-hidden />
           </div>
-          <span className="text-lg font-extrabold tracking-tight">Fast Food</span>
+          <span className="text-lg font-extrabold tracking-tight">Cravinos</span>
         </div>
 
         <section

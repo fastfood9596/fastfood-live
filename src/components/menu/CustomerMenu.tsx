@@ -71,7 +71,7 @@ export function CustomerMenu({
                 <Flame className="size-5 text-primary-foreground" aria-hidden />
               </div>
               <div className="leading-tight">
-                <h1 className="text-xl font-extrabold tracking-tight">Fast Food</h1>
+                <h1 className="text-xl font-extrabold tracking-tight">Cravinos</h1>
                 {table && <p className="text-xs font-semibold text-dine-in">Table {table}</p>}
               </div>
             </div>

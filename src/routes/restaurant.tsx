@@ -12,12 +12,12 @@ export const Route = createFileRoute("/restaurant")({
   validateSearch: parseStaffSearch,
   head: () => ({
     meta: [
-      { title: "Staff Hub — Fast Food" },
+      { title: "Staff Hub — Cravinos" },
       {
         name: "description",
-        content: "Cashier terminal, kitchen display and ready board for Fast Food staff, synced live.",
+        content: "Cashier terminal, kitchen display and ready board for Cravinos staff, synced live.",
       },
-      { property: "og:title", content: "Staff Hub — Fast Food" },
+      { property: "og:title", content: "Staff Hub — Cravinos" },
       { property: "og:description", content: "Take orders, run the kitchen line and manage online orders in one place." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
