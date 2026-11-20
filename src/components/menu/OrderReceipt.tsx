@@ -1,8 +1,10 @@
+import { useEffect, useRef } from "react";
 import { Bell, Check, ChefHat, Clock, Flame, PartyPopper, ReceiptText, Smartphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { money, orderTotal, type Order } from "@/lib/kds-store";
 import { TAX_RATE, formatMpesaPhone, formatOrderNumber, trackingStep, withTax } from "@/lib/orders";
 import { OrderTypeBadge } from "@/components/kds/badges";
+import { playOrderReadyChime } from "@/lib/chime";
 
 const STEPS = [
   { title: "Order received", wait: "Waiting for the cashier to confirm", icon: ReceiptText },
@@ -17,6 +19,15 @@ export function OrderReceipt({ order, onOrderMore }: { order: Order; onOrderMore
   const { subtotal, tax, total } = withTax(orderTotal(order));
   const ready = order.status === "ready";
   const collected = order.status === "completed";
+  const prevStatusRef = useRef<Order["status"] | undefined>(order.status);
+
+  useEffect(() => {
+    const currentStatus = order.status;
+    if (prevStatusRef.current && prevStatusRef.current !== "ready" && currentStatus === "ready") {
+      playOrderReadyChime();
+    }
+    prevStatusRef.current = currentStatus;
+  }, [order.status]);
 
   return (
     <div className="min-h-screen bg-background px-4 py-6">

@@ -21,6 +21,7 @@ import {
 } from "@/lib/orders";
 import { ORDER_TYPE_SOLID } from "@/components/kds/badges";
 import { DishPhoto } from "./DishPhoto";
+import { unlockChime } from "@/lib/chime";
 
 export function CartDrawer({
   open,
@@ -59,6 +60,7 @@ export function CartDrawer({
   };
 
   const submit = async (e: FormEvent) => {
+    unlockChime();
     e.preventDefault();
     if (submitting) return;
     if (unavailable.length > 0) {
