@@ -106,7 +106,7 @@ type Store = {
   ordersReady: boolean;
   sync: SyncStatus;
   mpesaConfig: MpesaConfig;
-  saveMpesaConfig: (config: MpesaConfig) => void;
+  saveMpesaConfig: (config: MpesaConfig) => Promise<void>;
   saveCategory: (input: Omit<Category, "id"> & { id?: string | undefined }) => Category;
   deleteCategory: (id: string) => void;
   saveItem: (input: Omit<MenuItem, "id"> & { id?: string | undefined }) => MenuItem;
@@ -137,39 +137,66 @@ export function KdsProvider({
   const [menuReady, setMenuReady] = useState(false);
   const [ordersReady, setOrdersReady] = useState(false);
   const [sync, setSync] = useState<SyncStatus>("connecting");
-  const storageKey = `kds-mpesa-${restaurantId || "default"}`;
-  const [mpesaConfig, setMpesaConfig] = useState<MpesaConfig>(() => {
-    if (typeof window === "undefined") return DEFAULT_MPESA_CONFIG;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      return saved ? { ...DEFAULT_MPESA_CONFIG, ...JSON.parse(saved) } : DEFAULT_MPESA_CONFIG;
-    } catch {
-      return DEFAULT_MPESA_CONFIG;
-    }
-  });
+ const [mpesaConfig, setMpesaConfig] = useState<MpesaConfig>(DEFAULT_MPESA_CONFIG);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const saved = localStorage.getItem(storageKey);
-      setMpesaConfig(saved ? { ...DEFAULT_MPESA_CONFIG, ...JSON.parse(saved) } : DEFAULT_MPESA_CONFIG);
-    } catch {
+    if (!restaurantId) {
       setMpesaConfig(DEFAULT_MPESA_CONFIG);
+      return;
     }
-  }, [storageKey]);
+
+    let cancelled = false;
+
+    async function loadMpesaConfig() {
+      const { data, error } = await (supabase as any)
+        .from("restaurants")
+        .select("mpesa_mode, mpesa_till_number, mpesa_business_number, mpesa_account_number")
+        .eq("id", restaurantId)
+        .maybeSingle();
+
+      if (cancelled || error || !data) return;
+
+      setMpesaConfig({
+        mode: data.mpesa_mode === "paybill" ? "paybill" : "till",
+        tillNumber: data.mpesa_till_number ?? "",
+        businessNumber: data.mpesa_business_number ?? "",
+        accountNumber: data.mpesa_account_number ?? "",
+      });
+    }
+
+    loadMpesaConfig();
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId]);
 
   const saveMpesaConfig = useCallback(
-    (config: MpesaConfig) => {
+    async (config: MpesaConfig) => {
       setMpesaConfig(config);
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(config));
-        toast.success("Lipa na M-Pesa details saved.");
-      } catch (e) {
-        console.error(e);
-        toast.error("Could not save M-Pesa settings.");
+      if (!restaurantId) {
+        toast.error("Missing restaurant ID.");
+        return;
       }
+
+      const { error } = await (supabase as any)
+        .from("restaurants")
+        .update({
+          mpesa_mode: config.mode,
+          mpesa_till_number: config.tillNumber.trim() || null,
+          mpesa_business_number: config.businessNumber.trim() || null,
+          mpesa_account_number: config.accountNumber.trim() || null,
+        })
+        .eq("id", restaurantId);
+
+      if (error) {
+        console.error(error);
+        toast.error("Could not save M-Pesa settings to database.");
+        return;
+      }
+
+      toast.success("Lipa na M-Pesa details saved.");
     },
-    [storageKey],
+    [restaurantId],
   );
 
   const ordersRef = useRef(orders);
