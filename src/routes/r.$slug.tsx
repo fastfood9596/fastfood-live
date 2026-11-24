@@ -68,6 +68,31 @@ function RestaurantPortalBySlug() {
     fetchRestaurant();
   }, [slug]);
 
+  // Dynamic PWA manifest per restaurant slug
+  useEffect(() => {
+    const cleanSlug = slug?.trim();
+    const manifestHref = cleanSlug
+      ? `/api/manifest?slug=${encodeURIComponent(cleanSlug)}`
+      : "/manifest.json";
+
+    let linkEl = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const previousHref = linkEl?.getAttribute("href") ?? "/manifest.json";
+
+    if (!linkEl) {
+      linkEl = document.createElement("link");
+      linkEl.rel = "manifest";
+      document.head.appendChild(linkEl);
+    }
+
+    linkEl.setAttribute("href", manifestHref);
+
+    return () => {
+      if (linkEl && linkEl.isConnected) {
+        linkEl.setAttribute("href", previousHref);
+      }
+    };
+  }, [slug]);
+
   // 2. Auth session listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -106,10 +131,10 @@ function RestaurantPortalBySlug() {
           return;
         }
 
-       const fullOrder = {
-      ...orderData,
-      items: orderData.items || [],
-    };
+        const fullOrder = {
+          ...orderData,
+          items: orderData.items || [],
+        };
         setLocalOrder(mapSupabaseOrderToLocal(fullOrder));
       } catch (err) {
         console.error("Error fetching order:", err);
@@ -228,21 +253,21 @@ function RestaurantPortalBySlug() {
               {authError && <div className="p-3 text-sm text-red-500 bg-red-500/10 rounded">{authError}</div>}
               <div>
                 <label className="text-sm font-medium">Email</label>
-                <Input 
-                  type="email" 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)} 
-                  required 
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   placeholder="you@example.com"
                 />
               </div>
               <div>
                 <label className="text-sm font-medium">Password</label>
-                <Input 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  required 
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="••••••••"
                 />
               </div>
@@ -250,8 +275,8 @@ function RestaurantPortalBySlug() {
                 {isSignUp ? "Sign Up" : "Sign In"}
               </Button>
               <div className="text-center mt-4">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsSignUp(!isSignUp)}
                   className="text-sm text-primary hover:underline"
                 >
@@ -265,7 +290,7 @@ function RestaurantPortalBySlug() {
     );
   }
 
- // 3. Customer Menu bound to this specific restaurant slug
+  // 3. Customer Menu bound to this specific restaurant slug
   return (
     <KdsProvider restaurantId={restaurantId}>
       <CustomerMenu
