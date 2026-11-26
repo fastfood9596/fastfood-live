@@ -13,20 +13,29 @@ type RestaurantManifestRow = {
   slug: string | null;
 };
 
-const MANIFEST_ICONS = [
-  {
-    src: "/Cravinos.jpg",
-    sizes: "192x192",
-    type: "image/jpeg",
-    purpose: "any",
-  },
-  {
-    src: "/Cravinos.jpg",
-    sizes: "512x512",
-    type: "image/jpeg",
-    purpose: "any maskable",
-  },
-];
+function getManifestIcons(slug: string) {
+  const iconConfig =
+    slug === "poland-burger"
+      ? { src: "/poland.jfif", type: "image/jpeg" }
+      : slug === "days-gone-fry"
+        ? { src: "/days.avif", type: "image/avif" }
+        : { src: "/Cravinos.jpg", type: "image/jpeg" };
+
+  return [
+    {
+      src: iconConfig.src,
+      sizes: "192x192",
+      type: iconConfig.type,
+      purpose: "any",
+    },
+    {
+      src: iconConfig.src,
+      sizes: "512x512",
+      type: iconConfig.type,
+      purpose: "any maskable",
+    },
+  ];
+}
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
@@ -107,7 +116,7 @@ async function handleManifestRequest(request: Request): Promise<Response> {
     display: "standalone",
     background_color: "#000000",
     theme_color: "#000000",
-    icons: MANIFEST_ICONS,
+    icons: getManifestIcons(cleanSlug),
   };
 
   return new Response(JSON.stringify(manifest, null, 2), {
