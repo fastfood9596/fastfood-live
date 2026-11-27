@@ -50,7 +50,7 @@ const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [contactPhone, setContactPhone] = useState("");
   const [businessReg, setBusinessReg] = useState("");
   const [consent, setConsent] = useState(false);
-
+const [logoFile, setLogoFile] = useState<File | null>(null);
   // Check active session and fetch restaurant profile
   async function loadSessionAndRestaurant() {
     setCheckingAuth(true);
@@ -93,7 +93,33 @@ const [restaurantId, setRestaurantId] = useState<string | null>(null);
           password,
         });
         if (authError) throw authError;
+let uploadedLogoUrl: string | null = null;
 
+if (logoFile) {
+  const fileExt = logoFile.name.split(".").pop()?.toLowerCase() || "png";
+  const safeSlug =
+    nameInput
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "restaurant";
+  const filePath = `${safeSlug}/${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("restaurant-logos")
+    .upload(filePath, logoFile, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrlData } = supabase.storage
+    .from("restaurant-logos")
+    .getPublicUrl(filePath);
+
+  uploadedLogoUrl = publicUrlData.publicUrl;
+}
        const { error: dbError } = await supabase.from("restaurants").insert([
           {
             name: nameInput.trim(),
@@ -101,6 +127,8 @@ const [restaurantId, setRestaurantId] = useState<string | null>(null);
             location: location.trim(),
             contact_phone: contactPhone.trim(),
             business_registration: businessReg.trim(),
+            logo_url: uploadedLogoUrl,
+            is_approved: false,
             is_active: false,
             consent: consent,
             status: "pending",
@@ -176,7 +204,15 @@ const [restaurantId, setRestaurantId] = useState<string | null>(null);
                     
                   />
                 </div>
-
+<div>
+  <label className="block text-sm mb-1">Restaurant Logo (Optional)</label>
+  <input
+    type="file"
+    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+    onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+    className="w-full p-2 rounded bg-[#262626] border border-[#444] text-sm text-gray-200 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-[#ff7a00] file:text-black file:font-semibold hover:file:bg-[#e06b00]"
+  />
+</div>
                 <div>
                   <label className="block text-sm mb-1">Location</label>
                   <input

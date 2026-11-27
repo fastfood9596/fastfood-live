@@ -11,15 +11,38 @@ type RestaurantManifestRow = {
   id: string;
   name: string | null;
   slug: string | null;
+  logo_url: string | null;
+  is_approved: boolean | null;
 };
 
-function getManifestIcons(slug: string) {
+function guessImageMimeType(src: string): string {
+  const clean = (src.split("?")[0] ?? "").toLowerCase();
+  if (clean.endsWith(".png")) return "image/png";
+  if (clean.endsWith(".webp")) return "image/webp";
+  if (clean.endsWith(".avif")) return "image/avif";
+  if (clean.endsWith(".svg")) return "image/svg+xml";
+  return "image/jpeg";
+}
+function getManifestIcons(
+  slug: string,
+  restaurant?: Pick<RestaurantManifestRow, "logo_url" | "is_approved"> | null,
+) {
+  const logoUrl = restaurant?.logo_url?.trim();
+  const isApproved = restaurant?.is_approved === true;
+  const hasValidLogoUrl =
+    Boolean(logoUrl) &&
+    (logoUrl!.startsWith("https://") ||
+      logoUrl!.startsWith("http://") ||
+      logoUrl!.startsWith("/"));
+
   const iconConfig =
-    slug === "poland-burger"
-      ? { src: "/poland.jfif", type: "image/jpeg" }
-      : slug === "days-gone-fry"
-        ? { src: "/days.avif", type: "image/avif" }
-        : { src: "/Cravinos.jpg", type: "image/jpeg" };
+    isApproved && hasValidLogoUrl
+      ? { src: logoUrl!, type: guessImageMimeType(logoUrl!) }
+      : slug === "poland-burger"
+        ? { src: "/poland.jfif", type: "image/jpeg" }
+        : slug === "days-gone-fry"
+          ? { src: "/days.avif", type: "image/avif" }
+          : { src: "/Cravinos.jpg", type: "image/jpeg" };
 
   return [
     {
@@ -74,7 +97,7 @@ async function fetchRestaurantBySlug(slug: string): Promise<RestaurantManifestRo
   const { url, key } = getSupabaseCredentials();
   if (!url || !key || !slug) return null;
 
-  const endpoint = `${url.replace(/\/$/, "")}/rest/v1/restaurants?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug&limit=1`;
+  const endpoint = `${url.replace(/\/$/, "")}/rest/v1/restaurants?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug,logo_url,is_approved&limit=1`;
   const res = await fetch(endpoint, {
     headers: {
       apikey: key,
@@ -93,12 +116,13 @@ async function handleManifestRequest(request: Request): Promise<Response> {
   const rawSlug = url.searchParams.get("slug")?.trim() ?? "";
   const cleanSlug = rawSlug.replace(/^\/+|\/+$/g, "");
 
-  let restaurantName = "Cravinos";
+ let restaurantName = "Cravinos";
+  let restaurantRow: RestaurantManifestRow | null = null;
   if (cleanSlug) {
     try {
-      const restaurant = await fetchRestaurantBySlug(cleanSlug);
-      if (restaurant?.name) {
-        restaurantName = restaurant.name;
+      restaurantRow = await fetchRestaurantBySlug(cleanSlug);
+      if (restaurantRow?.name) {
+        restaurantName = restaurantRow.name;
       }
     } catch (err) {
       console.error("Failed to resolve restaurant for manifest:", err);
@@ -116,7 +140,7 @@ async function handleManifestRequest(request: Request): Promise<Response> {
     display: "standalone",
     background_color: "#000000",
     theme_color: "#000000",
-    icons: getManifestIcons(cleanSlug),
+    icons: getManifestIcons(cleanSlug, restaurantRow),
   };
 
   return new Response(JSON.stringify(manifest, null, 2), {

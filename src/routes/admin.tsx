@@ -82,16 +82,15 @@ function AdminRoute() {
   };
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
-    const isActive = newStatus === 'approved';
-   const { error } = await supabase
-      .from('restaurants')
-      .update({ status: newStatus, is_active: isActive } as any)
-      .eq('id', id);
+  const isActive = newStatus === 'approved';
+  const { error } = await supabase
+    .from('restaurants')
+    .update({ status: newStatus, is_active: isActive, is_approved: isActive } as any)
+    .eq('id', id);
 
-    if (error) alert('Error updating status: ' + error.message);
-    else fetchRestaurants();
-  };
-
+  if (error) alert('Error updating status: ' + error.message);
+  else fetchRestaurants();
+};
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this restaurant record?')) return;
     const { error } = await supabase.from('restaurants').delete().eq('id', id);
